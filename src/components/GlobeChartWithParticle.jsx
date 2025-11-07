@@ -1,8 +1,12 @@
 
+
 import { useState, useMemo, useRef } from "react"
 import Globe from "react-globe.gl"
 import ForceGraph2D from "react-force-graph-2d"
 import { countryCoordinates, trainingData } from "../utils/GlobeData"
+import FilterCard from "./filter-card"
+import KPICard from "./kpi-card"
+
 
 const TrainingGlobeDashboard = () => {
   const [filters, setFilters] = useState({
@@ -17,7 +21,7 @@ const TrainingGlobeDashboard = () => {
   })
 
   const [selectedCountry, setSelectedCountry] = useState(null)
-  const [hoveredPoint, setHoveredPoint] = useState(null)
+  const [, setHoveredPoint] = useState(null)
   const [hoveredNode, setHoveredNode] = useState(null)
   const graphRef = useRef()
 
@@ -104,7 +108,6 @@ const TrainingGlobeDashboard = () => {
     records: m.records,
   }))
 
-  // Create network graph data for selected country
   const networkData = useMemo(() => {
     if (!selectedCountry) return { nodes: [], links: [] }
 
@@ -112,7 +115,6 @@ const TrainingGlobeDashboard = () => {
     const nodes = []
     const links = []
 
-    // Central country node
     const countryMetric = countryMetrics.find((m) => m.country === selectedCountry)
     nodes.push({
       id: "country",
@@ -127,7 +129,6 @@ const TrainingGlobeDashboard = () => {
       },
     })
 
-    // Aggregate by categories
     const segments = {}
     const assignmentTypes = {}
     const themes = {}
@@ -173,7 +174,6 @@ const TrainingGlobeDashboard = () => {
       }
     })
 
-    // Add segment nodes
     Object.entries(segments).forEach(([name, data]) => {
       const nodeId = `segment-${name}`
       const completion = data.inScope > 0 ? (data.completed / data.inScope) * 100 : 0
@@ -193,7 +193,6 @@ const TrainingGlobeDashboard = () => {
       links.push({ source: "country", target: nodeId, color: "rgba(59, 130, 246, 0.3)" })
     })
 
-    // Add assignment type nodes
     Object.entries(assignmentTypes).forEach(([name, data]) => {
       const nodeId = `assignment-${name}`
       const completion = data.inScope > 0 ? (data.completed / data.inScope) * 100 : 0
@@ -213,7 +212,6 @@ const TrainingGlobeDashboard = () => {
       links.push({ source: "country", target: nodeId, color: "rgba(139, 92, 246, 0.3)" })
     })
 
-    // Add theme nodes
     Object.entries(themes).forEach(([name, data]) => {
       const nodeId = `theme-${name}`
       const completion = data.inScope > 0 ? (data.completed / data.inScope) * 100 : 0
@@ -233,7 +231,6 @@ const TrainingGlobeDashboard = () => {
       links.push({ source: "country", target: nodeId, color: "rgba(6, 182, 212, 0.3)" })
     })
 
-    // Add status nodes
     Object.entries(statuses).forEach(([name, data]) => {
       const nodeId = `status-${name}`
       const statusColor = name === "Completed" ? "#10b981" : name === "In Progress" ? "#f59e0b" : "#ef4444"
@@ -252,7 +249,6 @@ const TrainingGlobeDashboard = () => {
       links.push({ source: "country", target: nodeId, color: statusColor + "33" })
     })
 
-    // Add department nodes
     Object.entries(departments).forEach(([name, data]) => {
       const nodeId = `dept-${name}`
       const completion = data.inScope > 0 ? (data.completed / data.inScope) * 100 : 0
@@ -289,111 +285,74 @@ const TrainingGlobeDashboard = () => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      <div className="border-b border-gray-700">
-        <div className="px-6 py-4">
-          <h1 className="text-3xl font-bold mb-4">Training Analytics Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 text-white flex flex-col">
+      {/* Header Section */}
+      <div className="border-b border-slate-700/50 bg-gradient-to-r from-slate-900/80 via-slate-800/50 to-slate-900/80 backdrop-blur-sm">
+        <div className="px-8 py-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent mb-2">
+            Training Analytics Dashboard
+          </h1>
+          {/* <p className="text-slate-400 text-sm">Global training metrics and performance insights</p> */}
+        </div>
+      </div>
 
-          <div className="bg-gray-800 rounded-lg p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <select
-                value={filters.region}
-                onChange={(e) => setFilters({ ...filters, region: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Regions</option>
-                {filterOptions.regions.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.country}
-                onChange={(e) => setFilters({ ...filters, country: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Countries</option>
-                {filterOptions.countries.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.segment}
-                onChange={(e) => setFilters({ ...filters, segment: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Segments</option>
-                {filterOptions.segments.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.jobFunction}
-                onChange={(e) => setFilters({ ...filters, jobFunction: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Job Functions</option>
-                {filterOptions.jobFunctions.map((j) => (
-                  <option key={j} value={j}>
-                    {j}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.manager}
-                onChange={(e) => setFilters({ ...filters, manager: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Managers</option>
-                {filterOptions.managers.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.assignmentType}
-                onChange={(e) => setFilters({ ...filters, assignmentType: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Assignment Types</option>
-                {filterOptions.assignmentTypes.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.theme}
-                onChange={(e) => setFilters({ ...filters, theme: e.target.value })}
-                className="bg-gray-700 rounded px-3 py-2 text-sm border border-gray-600 hover:border-gray-500 transition"
-              >
-                <option value="all">All Themes</option>
-                {filterOptions.themes.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+      <div className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm px-8 py-3">
+        <div className="flex flex-wrap gap-4">
+          <FilterCard
+            label="Regions"
+            value={filters.region}
+            onChange={(val) => setFilters({ ...filters, region: val })}
+            options={filterOptions.regions}
+            icon="🌍"
+          />
+          <FilterCard
+            label="Countries"
+            value={filters.country}
+            onChange={(val) => setFilters({ ...filters, country: val })}
+            options={filterOptions.countries}
+            icon="🏙️"
+          />
+          <FilterCard
+            label="Segments"
+            value={filters.segment}
+            onChange={(val) => setFilters({ ...filters, segment: val })}
+            options={filterOptions.segments}
+            icon="📊"
+          />
+          <FilterCard
+            label="Job Functions"
+            value={filters.jobFunction}
+            onChange={(val) => setFilters({ ...filters, jobFunction: val })}
+            options={filterOptions.jobFunctions}
+            icon="💼"
+          />
+          <FilterCard
+            label="Managers"
+            value={filters.manager}
+            onChange={(val) => setFilters({ ...filters, manager: val })}
+            options={filterOptions.managers}
+            icon="👤"
+          />
+          <FilterCard
+            label="Assignment Types"
+            value={filters.assignmentType}
+            onChange={(val) => setFilters({ ...filters, assignmentType: val })}
+            options={filterOptions.assignmentTypes}
+            icon="📋"
+          />
+          <FilterCard
+            label="Themes"
+            value={filters.theme}
+            onChange={(val) => setFilters({ ...filters, theme: val })}
+            options={filterOptions.themes}
+            icon="🎨"
+          />
         </div>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row gap-6 p-6 overflow-hidden">
         {/* Left Panel - Globe */}
-        <div className="w-full lg:w-1/2 flex flex-col min-h-0 bg-gray-800 rounded-lg overflow-hidden">
+        <div className="w-full lg:w-1/2 flex flex-col min-h-0 bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 rounded-2xl overflow-hidden border border-slate-700/30 shadow-2xl">
           <div className="flex-1 relative w-full h-full">
             <Globe
               globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
@@ -407,98 +366,111 @@ const TrainingGlobeDashboard = () => {
               height={800}
               pointRadius={(d) => d.totalHours}
               pointLabel={(d) => `
-                <div style="background: rgba(0,0,0,0.9); padding: 12px; border-radius: 8px; color: white; font-size: 12px;">
-                  <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">${d.country}</div>
-                  <div><strong>Region:</strong> ${d.region}</div>
-                  <div><strong>Associates:</strong> ${d.associatesCount}</div>
-                  <div><strong>Completion:</strong> ${d.completionRate.toFixed(1)}%</div>
-                  <div><strong>Total Hours:</strong> ${d.totalHours.toFixed(1)}</div>
+                <div style="background: rgba(15, 23, 42, 0.95); padding: 12px; border-radius: 12px; color: white; font-size: 12px; border: 1px solid rgba(100, 116, 139, 0.5);">
+                  <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #60a5fa;">${d.country}</div>
+                  <div style="color: #cbd5e1;"><strong>Region:</strong> ${d.region}</div>
+                  <div style="color: #cbd5e1;"><strong>Associates:</strong> ${d.associatesCount}</div>
+                  <div style="color: #10b981;"><strong>Completion:</strong> ${d.completionRate.toFixed(1)}%</div>
+                  <div style="color: #cbd5e1;"><strong>Total Hours:</strong> ${d.totalHours.toFixed(1)}</div>
                 </div>
               `}
               onPointClick={(point) => setSelectedCountry(point.country)}
               onPointHover={setHoveredPoint}
             />
 
-            {/* Legend */}
-            <div className="absolute bottom-4 left-4 bg-gray-800 bg-opacity-90 p-3 rounded-lg text-xs">
-              <div className="font-bold mb-2">Completion Rate</div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                <span>≥ 60%</span>
-              </div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-                <span>50-60%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span>&lt; 50%</span>
+            <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-sm p-4 rounded-xl text-xs border border-slate-700/50 shadow-xl">
+              <div className="font-bold mb-3 text-slate-200">Completion Rate</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></div>
+                  <span className="text-slate-300">≥ 60%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-amber-500 shadow-lg shadow-amber-500/50"></div>
+                  <span className="text-slate-300">50-60%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50"></div>
+                  <span className="text-slate-300">&lt; 50%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Right Panel - KPIs and Network Graph */}
-        <div className="w-full lg:w-1/2 flex flex-col min-h-0 bg-gray-800 rounded-lg p-6 overflow-y-auto">
-          {/* KPI Cards */}
-          <div className="space-y-3 mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4">
-              <div className="text-sm opacity-90">Completion %</div>
-              <div className="text-3xl font-bold mt-1">{kpis.completionRate.toFixed(1)}%</div>
-            </div>
+        <div className="w-full lg:w-1/2  min-h-0 bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 rounded-2xl p-4 overflow-y-auto border border-slate-700/30 shadow-2xl">
+          <div className="space-y-4 mb-6 flex gap-4">
+            <KPICard
+              title="Completion Rate"
+              value={kpis.completionRate.toFixed(1)}
+              unit="%"
+              gradient="from-blue-600 via-blue-500 to-cyan-500 "
+              icon="✓"
+            //   trend="+5.2%"
+            />
 
-            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-4">
-              <div className="text-sm opacity-90">Avg Hours per Associate</div>
-              <div className="text-3xl font-bold mt-1">{kpis.avgHours.toFixed(1)}</div>
-            </div>
+            <KPICard
+              title="Avg Hours per Associate"
+              value={kpis.avgHours.toFixed(1)}
+              unit="hrs"
+              gradient="from-purple-600 via-purple-500 to-pink-500"
+              icon="⏱️"
+            //   trend="+2.1%"
+            />
 
-            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-4">
-              <div className="text-sm opacity-90">Total Associates</div>
-              <div className="text-3xl font-bold mt-1">{kpis.totalAssociates}</div>
-            </div>
+            <KPICard
+              title="Total Associates"
+              value={kpis.totalAssociates}
+              unit="people"
+              gradient="from-emerald-600 via-emerald-500 to-teal-500"
+              icon="👥"
+            //   trend="+12"
+            />
           </div>
 
-          {/* Network Graph */}
+          {/* Network Graph Section - Unchanged */}
           {selectedCountry ? (
             <div className="flex-1 flex flex-col">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{selectedCountry} Analytics Network</h2>
-                <button onClick={() => setSelectedCountry(null)} className="text-gray-400 hover:text-white text-xl">
+                <h2 className="text-lg font-bold text-slate-100">{selectedCountry} Analytics Network</h2>
+                <button
+                  onClick={() => setSelectedCountry(null)}
+                  className="text-slate-400 hover:text-slate-200 transition-colors text-2xl font-light"
+                >
                   ✕
                 </button>
               </div>
 
-              {/* Network Visualization */}
-              <div className="bg-gray-900 rounded-lg overflow-hidden relative flex-1" style={{ minHeight: "200px" }}>
+              <div
+                className="bg-slate-900/50 rounded-xl overflow-hidden relative flex-1 border border-slate-700/30"
+                style={{ minHeight: "200px" }}
+              >
                 <ForceGraph2D
                   ref={graphRef}
                   graphData={networkData}
                   nodeLabel=""
-                  nodeCanvasObject={(node, ctx, globalScale) => {
+                  nodeCanvasObject={(node, ctx) => {
                     const label = node.name
                     const fontSize = node.type === "country" ? 14 : 10
                     ctx.font = `${fontSize}px Sans-Serif`
 
-                    // Draw node circle
                     ctx.beginPath()
                     ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false)
                     ctx.fillStyle = node.color
                     ctx.fill()
 
-                    // Add glow effect
                     if (hoveredNode && hoveredNode.id === node.id) {
                       ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"
                       ctx.lineWidth = 3
                       ctx.stroke()
                     }
 
-                    // Draw label
                     ctx.textAlign = "center"
                     ctx.textBaseline = "middle"
                     ctx.fillStyle = "white"
                     ctx.fillText(label, node.x, node.y)
 
-                    // Draw info below node if hovered
                     if (hoveredNode && hoveredNode.id === node.id && node.info) {
                       const padding = 8
                       const lineHeight = 14
@@ -510,16 +482,13 @@ const TrainingGlobeDashboard = () => {
                       const boxX = node.x - boxWidth / 2
                       const boxY = node.y + node.val + 10
 
-                      // Draw background
-                      ctx.fillStyle = "rgba(0, 0, 0, 0.9)"
+                      ctx.fillStyle = "rgba(15, 23, 42, 0.95)"
                       ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
 
-                      // Draw border
                       ctx.strokeStyle = node.color
                       ctx.lineWidth = 2
                       ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
 
-                      // Draw text
                       ctx.fillStyle = "white"
                       ctx.font = "11px Sans-Serif"
                       ctx.textAlign = "left"
@@ -550,48 +519,42 @@ const TrainingGlobeDashboard = () => {
               </div>
 
               {/* Legend for network */}
-              <div className="mt-4 bg-gray-700 rounded-lg p-4">
-                <div className="font-bold mb-3 text-sm">Node Categories</div>
+              <div className="mt-4 bg-slate-800/50 rounded-xl p-4 border border-slate-700/30">
+                <div className="font-bold mb-3 text-sm text-slate-200">Node Categories</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span>Segments</span>
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="text-slate-300">Segments</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                    <span>Assignment</span>
+                    <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                    <span className="text-slate-300">Assignment</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                    <span>Themes</span>
+                    <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                    <span className="text-slate-300">Themes</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-pink-500"></div>
-                    <span>Departments</span>
+                    <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                    <span className="text-slate-300">Departments</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span>Completed</span>
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span className="text-slate-300">Completed</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                    <span>In Progress</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span>Overdue</span>
+                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <span className="text-slate-300">In Progress</span>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-gray-400">
-                  Hover over nodes to see detailed information. Particles flow along connections.
-                </div>
+                <div className="mt-3 text-xs text-slate-400">Hover over nodes to see detailed information.</div>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center flex-1 text-center text-gray-400">
+            <div className="flex items-center justify-center flex-1 text-center text-slate-400">
               <div>
                 <svg
-                  className="w-16 h-16 mx-auto mb-4 opacity-50"
+                  className="w-16 h-16 mx-auto mb-4 opacity-40 text-slate-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -599,12 +562,12 @@ const TrainingGlobeDashboard = () => {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <p className="text-lg font-medium mb-2">Select a Country</p>
-                <p className="text-sm">Click on any point on the globe to view network analytics</p>
+                <p className="text-lg font-medium mb-2 text-slate-300">Select a Country</p>
+                <p className="text-sm text-slate-400">Click on any point on the globe to view network analytics</p>
               </div>
             </div>
           )}

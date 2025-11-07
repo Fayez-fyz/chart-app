@@ -32,7 +32,7 @@ const TrainingGlobeDashboard = () => {
   })
 
   const [selectedCountry, setSelectedCountry] = useState(null)
-  const [hoveredPoint, setHoveredPoint] = useState(null)
+  const [, setHoveredPoint] = useState(null)
 
   const filteredData = useMemo(() => {
     return trainingData.filter((record) => {
